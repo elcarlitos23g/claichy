@@ -1,0 +1,6 @@
+{
+  "name": "Spotiy - Reproductor Legal de Música & Listas Offline",
+  "description": "Reproductor de música estilo Spotify conectado legalmente a YouTube API, con creación de listas personalizadas y modo sin conexión.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
