@@ -8,6 +8,7 @@ const STORE_PLAYLISTS = 'playlists';
 const STORE_TRACKS = 'cached_tracks';
 const STORE_AUDIO_BLOBS = 'audio_blobs';
 const STORAGE_LIKES_KEY = 'spotiy_liked_song_ids';
+const STORAGE_LIKED_METADATA_KEY = 'spotiy_liked_songs_metadata';
 
 class OfflineStorage {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -110,25 +111,64 @@ class OfflineStorage {
   public getLikedSongIds(): string[] {
     try {
       const saved = localStorage.getItem(STORAGE_LIKES_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return Array.from(new Set(parsed.filter(Boolean)));
+      }
+      return [];
     } catch (e) {
       return [];
     }
   }
 
-  public toggleLikeSong(songId: string): boolean {
-    const likes = this.getLikedSongIds();
-    const index = likes.indexOf(songId);
+  public getLikedSongObjects(): Song[] {
+    try {
+      const saved = localStorage.getItem(STORAGE_LIKED_METADATA_KEY);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  public toggleLikeSong(songId: string, songObj?: Song): boolean {
+    let likes = this.getLikedSongIds();
+    let songObjects = this.getLikedSongObjects();
+    const isCurrentlyLiked = likes.includes(songId);
     let isNowLiked = false;
-    if (index >= 0) {
-      likes.splice(index, 1);
+
+    if (isCurrentlyLiked) {
+      // Remove ALL occurrences to eliminate any duplicate issues
+      likes = likes.filter((id) => id !== songId);
+      songObjects = songObjects.filter((s) => s.id !== songId);
       isNowLiked = false;
     } else {
-      likes.push(songId);
+      likes = Array.from(new Set([...likes, songId]));
+      if (songObj) {
+        songObjects = [...songObjects.filter((s) => s.id !== songId), songObj];
+      }
       isNowLiked = true;
     }
+
     localStorage.setItem(STORAGE_LIKES_KEY, JSON.stringify(likes));
+    localStorage.setItem(STORAGE_LIKED_METADATA_KEY, JSON.stringify(songObjects));
     return isNowLiked;
+  }
+
+  public removeLikedSong(songId: string): void {
+    let likes = this.getLikedSongIds();
+    let songObjects = this.getLikedSongObjects();
+    likes = likes.filter((id) => id !== songId);
+    songObjects = songObjects.filter((s) => s.id !== songId);
+    localStorage.setItem(STORAGE_LIKES_KEY, JSON.stringify(likes));
+    localStorage.setItem(STORAGE_LIKED_METADATA_KEY, JSON.stringify(songObjects));
+  }
+
+  public clearLikedSongs(): void {
+    localStorage.setItem(STORAGE_LIKES_KEY, JSON.stringify([]));
+    localStorage.setItem(STORAGE_LIKED_METADATA_KEY, JSON.stringify([]));
   }
 
   // Audio Blob Storage (for user-imported MP3/WAV files)

@@ -138,7 +138,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-white/90">
-                {likedSongsCount} temas guardados
+                {likedSongsCount === 0 ? 'Sin temas guardados' : `${likedSongsCount} ${likedSongsCount === 1 ? 'tema guardado' : 'temas guardados'}`}
               </span>
               <div className="w-10 h-10 rounded-xl bg-black/30 backdrop-blur-md text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
                 <Heart className="w-5 h-5 fill-current text-white" />

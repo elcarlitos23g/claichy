@@ -30,6 +30,7 @@ interface PlaylistDetailViewProps {
   onAddToQueue: (song: Song) => void;
   onOpenAddToPlaylist: (song: Song) => void;
   onOpenSearchToAdd: () => void;
+  onClearLikedSongs?: () => void;
 }
 
 export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
@@ -47,6 +48,7 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
   onAddToQueue,
   onOpenAddToPlaylist,
   onOpenSearchToAdd,
+  onClearLikedSongs,
 }) => {
   const [activeMenuSongId, setActiveMenuSongId] = useState<string | null>(null);
 
@@ -119,7 +121,7 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs text-neutral-400 mt-2 font-medium">
             <span className="text-white font-bold">{playlist.author || 'Tú'}</span>
             <span>·</span>
-            <span>{playlist.tracks.length} canciones</span>
+            <span>{playlist.tracks.length} {playlist.tracks.length === 1 ? 'canción' : 'canciones'}</span>
             <span>·</span>
             <span>{totalMinutes} min</span>
             {playlist.isOfflineAvailable && (
@@ -177,6 +179,20 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
             <span>Añadir temas</span>
           </button>
         </div>
+
+        {/* Liked Songs Clear Option */}
+        {playlist.isLikedSongs && playlist.tracks.length > 0 && onClearLikedSongs && (
+          <div className="flex items-center gap-1 sm:gap-2 ml-auto">
+            <button
+              onClick={onClearLikedSongs}
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-all cursor-pointer"
+              title="Eliminar todas las canciones de favoritos"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Vaciar favoritos</span>
+            </button>
+          </div>
+        )}
 
         {/* Custom Playlist Options */}
         {playlist.isCustom && !playlist.isLikedSongs && (
@@ -307,18 +323,31 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
 
                   {/* Actions & Duration */}
                   <div className="col-span-3 sm:col-span-4 md:col-span-3 lg:col-span-1 flex items-center justify-end gap-1.5 sm:gap-3 text-xs font-mono text-neutral-400">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleLike(song.id);
-                      }}
-                      className={`p-1 transition-colors ${
-                        liked ? 'text-rose-500' : 'text-neutral-500 hover:text-white sm:opacity-0 sm:group-hover:opacity-100'
-                      }`}
-                      title={liked ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                    >
-                      <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${liked ? 'fill-current opacity-100' : ''}`} />
-                    </button>
+                    {playlist.isLikedSongs ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveTrack(playlist.id, song.id);
+                        }}
+                        className="p-1 text-rose-500 hover:text-rose-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                        title="Eliminar de favoritos"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleLike(song.id);
+                        }}
+                        className={`p-1 transition-colors ${
+                          liked ? 'text-rose-500' : 'text-neutral-500 hover:text-white sm:opacity-0 sm:group-hover:opacity-100'
+                        }`}
+                        title={liked ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${liked ? 'fill-current opacity-100' : ''}`} />
+                      </button>
+                    )}
 
                     <span className="hidden sm:inline-block w-10 text-right tabular-nums">
                       {Math.floor(song.duration / 60)}:
@@ -363,7 +392,7 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
                           >
                             Añadir a otra lista
                           </button>
-                          {playlist.isCustom && (
+                          {(playlist.isCustom || playlist.isLikedSongs) && (
                             <button
                               onClick={() => {
                                 onRemoveTrack(playlist.id, song.id);
@@ -371,7 +400,7 @@ export const PlaylistDetailView: React.FC<PlaylistDetailViewProps> = ({
                               }}
                               className="w-full text-left px-3.5 py-2 text-rose-400 hover:bg-rose-500/20 transition-colors"
                             >
-                              Quitar de esta colección
+                              {playlist.isLikedSongs ? 'Quitar de favoritos' : 'Quitar de esta colección'}
                             </button>
                           )}
                         </div>

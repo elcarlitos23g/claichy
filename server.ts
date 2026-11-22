@@ -17,6 +17,18 @@ app.get('/api/download-zip', (_req, res) => {
   res.download(zipFile, 'claichy-app.zip');
 });
 
+// API Route: Download single standalone portable HTML file for pendrive (double-click to open)
+app.get('/api/download-portable', (_req, res) => {
+  const htmlFile = path.resolve(__dirname, 'public', 'Claichy-Portable.html');
+  res.download(htmlFile, 'Claichy-Abrir-Aqui.html');
+});
+
+// API Route: Download complete pendrive presentation pack (Portable HTML + Launcher + Source code)
+app.get('/api/download-pendrive', (_req, res) => {
+  const zipFile = path.resolve(__dirname, 'public', 'Claichy-Pendrive-Profesor.zip');
+  res.download(zipFile, 'Claichy-Pendrive-Profesor.zip');
+});
+
 // API Route: Live real-time YouTube music search for ALL artists in the world
 app.get('/api/search', async (req, res) => {
   const query = (req.query.q as string) || '';

@@ -77,15 +77,17 @@ export default function App() {
     audioSource: 'youtube',
   });
 
-  // All known songs combined (catalog + custom playlist tracks)
+  // All known songs combined (catalog + custom playlist tracks + liked songs metadata)
   const allKnownSongs = useMemo(() => {
     const map = new Map<string, Song>();
     CATALOG_SONGS.forEach((s) => map.set(s.id, s));
     customPlaylists.forEach((pl) => {
       pl.tracks.forEach((s) => map.set(s.id, s));
     });
+    const savedLikedObjs = offlineStorage.getLikedSongObjects();
+    savedLikedObjs.forEach((s) => map.set(s.id, s));
     return Array.from(map.values());
-  }, [customPlaylists]);
+  }, [customPlaylists, likedSongIds]);
 
   // Liked songs virtual playlist
   const likedSongsPlaylist: Playlist = useMemo(() => {
@@ -108,6 +110,19 @@ export default function App() {
   const allPlaylists = useMemo(() => {
     return [...INITIAL_CURATED_PLAYLISTS, ...customPlaylists];
   }, [customPlaylists]);
+
+  // Dynamically resolve currently viewed playlist so adding/removing liked tracks updates instantly
+  const activeViewPlaylist = useMemo(() => {
+    if (!selectedPlaylist) return null;
+    if (selectedPlaylist.id === 'liked-songs') {
+      return likedSongsPlaylist;
+    }
+    const foundCustom = customPlaylists.find((p) => p.id === selectedPlaylist.id);
+    if (foundCustom) return foundCustom;
+    const foundCurated = INITIAL_CURATED_PLAYLISTS.find((p) => p.id === selectedPlaylist.id);
+    if (foundCurated) return foundCurated;
+    return selectedPlaylist;
+  }, [selectedPlaylist, likedSongsPlaylist, customPlaylists]);
 
   // Show toast notification
   const showToast = useCallback((msg: string) => {
@@ -429,12 +444,18 @@ export default function App() {
 
   // Like Song
   const handleToggleLike = useCallback(
-    (songId: string) => {
-      const isNowLiked = offlineStorage.toggleLikeSong(songId);
-      setLikedSongIds(offlineStorage.getLikedSongIds());
+    (songId: string, songObj?: Song) => {
+      const fallbackObj =
+        songObj ||
+        (playerState.currentTrack?.id === songId
+          ? playerState.currentTrack
+          : allKnownSongs.find((s) => s.id === songId));
+      const isNowLiked = offlineStorage.toggleLikeSong(songId, fallbackObj);
+      const updatedLikes = offlineStorage.getLikedSongIds();
+      setLikedSongIds(updatedLikes);
       showToast(isNowLiked ? 'Guardada en Tus Me Gusta' : 'Eliminada de Tus Me Gusta');
     },
-    [showToast]
+    [allKnownSongs, playerState.currentTrack, showToast]
   );
 
   const isLiked = useCallback(
@@ -601,7 +622,20 @@ export default function App() {
     }
   };
 
+  const handleClearLikedSongs = useCallback(() => {
+    offlineStorage.clearLikedSongs();
+    setLikedSongIds([]);
+    showToast('Tus Me Gusta se han vaciado');
+  }, [showToast]);
+
   const handleRemoveTrackFromPlaylist = async (playlistId: string, songId: string) => {
+    if (playlistId === 'liked-songs') {
+      offlineStorage.removeLikedSong(songId);
+      const updatedLikes = offlineStorage.getLikedSongIds();
+      setLikedSongIds(updatedLikes);
+      showToast('Canción eliminada de Tus Me Gusta');
+      return;
+    }
     const pl = customPlaylists.find((p) => p.id === playlistId);
     if (!pl) return;
 
@@ -799,9 +833,9 @@ export default function App() {
             />
           )}
 
-          {currentView === 'playlist' && selectedPlaylist && (
+          {currentView === 'playlist' && activeViewPlaylist && (
             <PlaylistDetailView
-              playlist={selectedPlaylist}
+              playlist={activeViewPlaylist}
               currentTrack={playerState.currentTrack}
               isPlaying={playerState.isPlaying}
               onPlaySong={handlePlaySong}
@@ -833,6 +867,7 @@ export default function App() {
               onOpenSearchToAdd={() => {
                 setCurrentView('search');
               }}
+              onClearLikedSongs={handleClearLikedSongs}
             />
           )}
 

@@ -13,8 +13,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowT
 
   if (!isOpen) return null;
 
-  // Use current window location or shared origin
-  const shareUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : '';
+  // Always resolve to the public shared URL (never expose private ais-dev- or local file:// links)
+  const PUBLIC_SHARED_URL = 'https://ais-pre-xosdpdd4r2ht5z5dype2ks-770459548229.us-east1.run.app';
+  const rawUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : PUBLIC_SHARED_URL;
+  const shareUrl =
+    rawUrl.startsWith('file:') || rawUrl.includes('localhost') || rawUrl.includes('127.0.0.1')
+      ? PUBLIC_SHARED_URL
+      : rawUrl.includes('ais-dev-')
+        ? rawUrl.replace('ais-dev-', 'ais-pre-')
+        : rawUrl;
   const shareTitle = 'Claichy Audio Studio';
   const shareMessage = `¡Escucha música de todos los artistas en Claichy, con listas personalizadas y modo sin conexión! 🎶🔥`;
 
@@ -177,17 +184,39 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowT
             )}
           </div>
 
-          {/* Download Complete Source Code for GitHub */}
-          <div className="pt-1 border-t border-white/5">
+          {/* Download for Pendrive / GitHub */}
+          <div className="pt-2 border-t border-white/5 space-y-2">
             <a
-              href="/api/download-zip"
-              download="claichy-music-player.zip"
-              onClick={() => onShowToast('Descargando código completo para GitHub...')}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all group"
+              href="/api/download-portable"
+              download="Claichy-Abrir-Aqui.html"
+              onClick={() => onShowToast('Descargando versión portable para pendrive...')}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/25 to-yellow-500/20 hover:from-amber-500/35 hover:to-yellow-500/30 border border-amber-400/40 text-amber-200 hover:text-white text-xs font-bold transition-all group"
             >
-              <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>Descargar Código Completo (.ZIP para GitHub)</span>
+              <Download className="w-4 h-4 group-hover:scale-110 transition-transform text-amber-400" />
+              <span>Descargar para Pendrive (1 Archivo HTML Portable)</span>
             </a>
+
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href="/api/download-pendrive"
+                download="Claichy-Pendrive-Profesor.zip"
+                onClick={() => onShowToast('Descargando paquete completo para profesor...')}
+                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-[11px] font-semibold transition-all"
+              >
+                <FolderArchive className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="truncate">Pack Pendrive (.ZIP)</span>
+              </a>
+
+              <a
+                href="/api/download-zip"
+                download="claichy-music-player.zip"
+                onClick={() => onShowToast('Descargando código completo para GitHub...')}
+                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-[11px] font-semibold transition-all"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="truncate">Código GitHub (.ZIP)</span>
+              </a>
+            </div>
           </div>
         </div>
 

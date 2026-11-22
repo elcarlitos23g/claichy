@@ -122,7 +122,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="truncate flex-1">
               <p className="text-xs font-semibold truncate">Favoritos Guardados</p>
-              <p className="text-[10px] text-neutral-400">{likedSongsCount} temas</p>
+              <p className="text-[10px] text-neutral-400">
+                {likedSongsCount === 0 ? 'Sin temas' : `${likedSongsCount} ${likedSongsCount === 1 ? 'tema' : 'temas'}`}
+              </p>
             </div>
           </button>
 
