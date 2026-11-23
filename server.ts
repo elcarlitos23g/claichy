@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,22 +12,31 @@ const isProd = process.env.NODE_ENV === 'production';
 
 app.use(express.json());
 
+function sendDownloadAsset(res: express.Response, fileName: string, downloadName: string) {
+  const candidates = [
+    path.resolve(__dirname, 'public', fileName),
+    path.resolve(__dirname, 'dist', fileName),
+  ];
+  const found = candidates.find((p) => fs.existsSync(p));
+  if (!found) {
+    return res.status(404).json({ error: `Archivo no encontrado: ${fileName}` });
+  }
+  return res.download(found, downloadName);
+}
+
 // API Route: Download complete project ZIP to upload to GitHub
 app.get('/api/download-zip', (_req, res) => {
-  const zipFile = path.resolve(__dirname, 'public', 'claichy-source.zip');
-  res.download(zipFile, 'claichy-app.zip');
+  sendDownloadAsset(res, 'claichy-source.zip', 'claichy-app.zip');
 });
 
 // API Route: Download single standalone portable HTML file for pendrive (double-click to open)
 app.get('/api/download-portable', (_req, res) => {
-  const htmlFile = path.resolve(__dirname, 'public', 'Claichy-Portable.html');
-  res.download(htmlFile, 'Claichy-Abrir-Aqui.html');
+  sendDownloadAsset(res, 'Claichy-Portable.html', 'Claichy-Abrir-Aqui.html');
 });
 
 // API Route: Download complete pendrive presentation pack (Portable HTML + Launcher + Source code)
 app.get('/api/download-pendrive', (_req, res) => {
-  const zipFile = path.resolve(__dirname, 'public', 'Claichy-Pendrive-Profesor.zip');
-  res.download(zipFile, 'Claichy-Pendrive-Profesor.zip');
+  sendDownloadAsset(res, 'Claichy-Pendrive-Profesor.zip', 'Claichy-Pendrive-Profesor.zip');
 });
 
 // API Route: Live real-time YouTube music search for ALL artists in the world

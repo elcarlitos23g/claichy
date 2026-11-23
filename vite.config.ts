@@ -59,6 +59,7 @@ export default defineConfig(() => {
             '**/Claichy-Portable.html',
             '**/assets/aistudio/**',
           ],
+          navigateFallbackDenylist: [/^\/api\//],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {

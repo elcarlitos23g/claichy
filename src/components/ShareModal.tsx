@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Share2, QrCode, MessageCircle, ExternalLink, Sparkles, Download, FolderArchive } from 'lucide-react';
+import { X, Copy, Check, Share2, QrCode, MessageCircle, ExternalLink, Sparkles, Download, FolderArchive, Loader2 } from 'lucide-react';
+import { downloadAsset } from '../utils/downloadAsset';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -10,8 +11,27 @@ interface ShareModalProps {
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowToast }) => {
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const triggerDownload = async (
+    key: string,
+    primaryUrl: string,
+    fallbackUrl: string,
+    filename: string,
+    startMsg: string
+  ) => {
+    setDownloading(key);
+    onShowToast(startMsg);
+    const res = await downloadAsset(primaryUrl, fallbackUrl, filename);
+    setDownloading(null);
+    if (res.ok) {
+      onShowToast(`¡Descargado "${filename}"!`);
+    } else {
+      onShowToast(res.error || 'No se pudo descargar el archivo.');
+    }
+  };
 
   // Always resolve to the public shared URL (never expose private ais-dev- or local file:// links)
   const PUBLIC_SHARED_URL = 'https://ais-pre-xosdpdd4r2ht5z5dype2ks-770459548229.us-east1.run.app';
@@ -71,10 +91,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowT
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}&bgcolor=0e121a&color=f59e0b`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0e121a]/95 w-full max-w-md rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-amber-500/20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-[#0e121a]/95 w-full max-w-md max-h-[90dvh] flex flex-col rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-amber-500/20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
               <Share2 className="w-4 h-4" />
@@ -97,7 +117,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowT
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           <p className="text-xs text-slate-300 leading-relaxed">
             Tus amigos pueden abrir este enlace directamente desde cualquier teléfono o computadora sin instalar nada, para escuchar a todos sus artistas y crear sus propias listas.
           </p>
@@ -186,42 +206,82 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onShowT
 
           {/* Download for Pendrive / GitHub */}
           <div className="pt-2 border-t border-white/5 space-y-2">
-            <a
-              href="/api/download-portable"
-              download="Claichy-Abrir-Aqui.html"
-              onClick={() => onShowToast('Descargando versión portable para pendrive...')}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/25 to-yellow-500/20 hover:from-amber-500/35 hover:to-yellow-500/30 border border-amber-400/40 text-amber-200 hover:text-white text-xs font-bold transition-all group"
+            <button
+              type="button"
+              disabled={downloading !== null}
+              onClick={() =>
+                triggerDownload(
+                  'portable',
+                  '/api/download-portable',
+                  '/Claichy-Portable.html',
+                  'Claichy-Abrir-Aqui.html',
+                  'Descargando versión portable para pendrive...'
+                )
+              }
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/25 to-yellow-500/20 hover:from-amber-500/35 hover:to-yellow-500/30 border border-amber-400/40 text-amber-200 hover:text-white text-xs font-bold transition-all group cursor-pointer disabled:opacity-60"
             >
-              <Download className="w-4 h-4 group-hover:scale-110 transition-transform text-amber-400" />
-              <span>Descargar para Pendrive (1 Archivo HTML Portable)</span>
-            </a>
+              {downloading === 'portable' ? (
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+              ) : (
+                <Download className="w-4 h-4 group-hover:scale-110 transition-transform text-amber-400" />
+              )}
+              <span>
+                {downloading === 'portable'
+                  ? 'Descargando HTML Portable...'
+                  : 'Descargar para Pendrive (1 Archivo HTML Portable)'}
+              </span>
+            </button>
 
             <div className="grid grid-cols-2 gap-2">
-              <a
-                href="/api/download-pendrive"
-                download="Claichy-Pendrive-Profesor.zip"
-                onClick={() => onShowToast('Descargando paquete completo para profesor...')}
-                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-[11px] font-semibold transition-all"
+              <button
+                type="button"
+                disabled={downloading !== null}
+                onClick={() =>
+                  triggerDownload(
+                    'pendrive',
+                    '/api/download-pendrive',
+                    '/Claichy-Pendrive-Profesor.zip',
+                    'Claichy-Pendrive-Profesor.zip',
+                    'Descargando paquete completo para profesor...'
+                  )
+                }
+                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-60"
               >
-                <FolderArchive className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                {downloading === 'pendrive' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
+                ) : (
+                  <FolderArchive className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                )}
                 <span className="truncate">Pack Pendrive (.ZIP)</span>
-              </a>
+              </button>
 
-              <a
-                href="/api/download-zip"
-                download="claichy-music-player.zip"
-                onClick={() => onShowToast('Descargando código completo para GitHub...')}
-                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-[11px] font-semibold transition-all"
+              <button
+                type="button"
+                disabled={downloading !== null}
+                onClick={() =>
+                  triggerDownload(
+                    'zip',
+                    '/api/download-zip',
+                    '/claichy-source.zip',
+                    'claichy-app.zip',
+                    'Descargando código completo para GitHub...'
+                  )
+                }
+                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-60"
               >
-                <Download className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                {downloading === 'zip' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-300 shrink-0" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
                 <span className="truncate">Código GitHub (.ZIP)</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between">
+        <div className="px-6 py-3.5 bg-slate-950/60 border-t border-white/5 flex items-center justify-between shrink-0">
           <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
             <Sparkles className="w-3 h-3 text-amber-400" />
             Acceso público universal
