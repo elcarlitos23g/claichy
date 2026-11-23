@@ -21,7 +21,7 @@ const compiledCss = fs.readFileSync(path.join(distAssetsDir, cssFile), 'utf-8');
 console.log('2. Bundling React application with esbuild (IIFE standalone)...');
 const tempJsPath = path.join(rootDir, 'dist', 'claichy-bundle.iife.js');
 execSync(
-  `npx esbuild src/main.tsx --bundle --format=iife --minify --platform=browser --loader:.css=empty --define:process.env.NODE_ENV=\\"production\\" --outfile=${tempJsPath}`,
+  `npx esbuild src/main.tsx --bundle --format=iife --minify --platform=browser --loader:.css=empty --alias:virtual:pwa-register=./scripts/pwa-stub.ts --define:process.env.NODE_ENV=\\"production\\" --outfile=${tempJsPath}`,
   { cwd: rootDir, stdio: 'inherit' }
 );
 
@@ -38,10 +38,14 @@ if (fs.existsSync(imagesDir)) {
     const ext = path.extname(img).toLowerCase().replace('.', '') || 'jpeg';
     const mime = ext === 'jpg' ? 'jpeg' : ext;
     imageMap[img] = `data:image/${mime};base64,${base64}`;
-    const doubleQuoted = `"/src/assets/images/${img}"`;
-    const singleQuoted = `'/src/assets/images/${img}'`;
+    const doubleQuoted = `"/assets/images/${img}"`;
+    const singleQuoted = `'/assets/images/${img}'`;
+    const legacyDoubleQuoted = `"/src/assets/images/${img}"`;
+    const legacySingleQuoted = `'/src/assets/images/${img}'`;
     compiledJs = compiledJs.split(doubleQuoted).join(`window.__CLAICHY_IMG__["${img}"]`);
     compiledJs = compiledJs.split(singleQuoted).join(`window.__CLAICHY_IMG__["${img}"]`);
+    compiledJs = compiledJs.split(legacyDoubleQuoted).join(`window.__CLAICHY_IMG__["${img}"]`);
+    compiledJs = compiledJs.split(legacySingleQuoted).join(`window.__CLAICHY_IMG__["${img}"]`);
     console.log(`   Mapped image once: ${img}`);
   }
 }

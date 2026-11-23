@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, Heart, Disc3, Sparkles, Radio, Users, Volume2, ArrowRight } from 'lucide-react';
 import { Artist, Playlist, Song } from '../types';
+import { PWAInstallButton } from '../components/PWAInstallButton';
 
 interface HomeViewProps {
   playlists: Playlist[];
@@ -73,6 +74,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <Play className="w-4 h-4 fill-current" />
                 <span>Escuchar Éxito Destacado</span>
               </button>
+
+              <PWAInstallButton variant="hero" />
 
               {heroSong && (
                 <div className="text-xs text-neutral-400 truncate max-w-full sm:max-w-[280px] bg-white/[0.04] border border-white/[0.08] px-3.5 py-2 rounded-xl text-center sm:text-left">

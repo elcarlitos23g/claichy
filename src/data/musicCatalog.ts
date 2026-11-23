@@ -270,7 +270,7 @@ export const CATALOG_SONGS: Song[] = [
     album: 'FERXXOCALIPSIS',
     duration: 196,
     youtubeId: 'P_h6Zq8B084',
-    coverUrl: '/src/assets/images/playlist_urban_latino_1794094173265.jpg',
+    coverUrl: '/assets/images/playlist_urban_latino_1794094173265.jpg',
     genre: 'Urbano Latino',
     musicalKey: 'Am',
     bpm: 130,
@@ -397,7 +397,7 @@ export const CATALOG_SONGS: Song[] = [
     album: 'Nevermind',
     duration: 301,
     youtubeId: 'hTWKbfoikeg',
-    coverUrl: '/src/assets/images/playlist_rock_classics_1794094172992.jpg',
+    coverUrl: '/assets/images/playlist_rock_classics_1794094172992.jpg',
     genre: 'Grunge / Rock',
     musicalKey: 'Fm',
     bpm: 117,
@@ -415,7 +415,7 @@ export const CATALOG_SONGS: Song[] = [
     album: 'Chill Study Sessions Vol. 1',
     duration: 215,
     youtubeId: '5yx6BWlEVcY',
-    coverUrl: '/src/assets/images/playlist_lofi_chill_1794094174055.jpg',
+    coverUrl: '/assets/images/playlist_lofi_chill_1794094174055.jpg',
     genre: 'Lo-Fi Chill',
     musicalKey: 'C',
     bpm: 80,
@@ -512,7 +512,7 @@ export const ARTISTS_CATALOG: Artist[] = [
     id: 'art-feid',
     name: 'Feid (Ferxxo)',
     monthlyListeners: '48,150,000 oyentes mensuales',
-    avatarUrl: '/src/assets/images/playlist_urban_latino_1794094173265.jpg',
+    avatarUrl: '/assets/images/playlist_urban_latino_1794094173265.jpg',
     bio: 'Salomón Villada, cantante y compositor colombiano, el creador del fenómeno del Ferxxo con éxitos como LUNA, Feliz Cumpleaños Ferxxo y Yandel 150.',
     genres: ['Urbano', 'Reggaeton'],
     topTracks: CATALOG_SONGS.filter((s) => s.artist.includes('Feid')),
@@ -560,7 +560,7 @@ export const INITIAL_CURATED_PLAYLISTS: Playlist[] = [
     id: 'pl-top-global',
     title: 'Éxitos Globales Top 50',
     description: 'Los temas más reproducidos en todo el mundo. Actualizada cada semana con lo más caliente del momento.',
-    coverUrl: '/src/assets/images/playlist_top_global_1794094172053.jpg',
+    coverUrl: '/assets/images/playlist_top_global_1794094172053.jpg',
     color: '#059669', // Emerald
     tracks: [
       CATALOG_SONGS[0], // Monaco
@@ -579,7 +579,7 @@ export const INITIAL_CURATED_PLAYLISTS: Playlist[] = [
     id: 'pl-urbano-latino',
     title: 'Fuego Urbano & Reggaetón',
     description: 'El mejor perreo y trap latino para prender la fiesta con Bad Bunny, Shakira, Karol G, Feid y Rosalía.',
-    coverUrl: '/src/assets/images/playlist_urban_latino_1794094173265.jpg',
+    coverUrl: '/assets/images/playlist_urban_latino_1794094173265.jpg',
     color: '#E11D48', // Rose
     tracks: [
       CATALOG_SONGS[0], // Monaco
@@ -598,7 +598,7 @@ export const INITIAL_CURATED_PLAYLISTS: Playlist[] = [
     id: 'pl-lofi-chill',
     title: 'Lo-Fi Chill & Concentración',
     description: 'Ritmos tranquilos para estudiar, programar y relajarse con sonidos de lluvia y Rhodes.',
-    coverUrl: '/src/assets/images/playlist_lofi_chill_1794094174055.jpg',
+    coverUrl: '/assets/images/playlist_lofi_chill_1794094174055.jpg',
     color: '#4F46E5', // Indigo
     tracks: [
       CATALOG_SONGS[21], // Rainy study
@@ -613,7 +613,7 @@ export const INITIAL_CURATED_PLAYLISTS: Playlist[] = [
     id: 'pl-rock-legends',
     title: 'Rock Classics & Guitarras',
     description: 'Himnos eternos del rock: Queen, Nirvana, Coldplay, Imagine Dragons y más leyendas.',
-    coverUrl: '/src/assets/images/playlist_rock_classics_1794094172992.jpg',
+    coverUrl: '/assets/images/playlist_rock_classics_1794094172992.jpg',
     color: '#D97706', // Amber
     tracks: [
       CATALOG_SONGS[17], // Queen

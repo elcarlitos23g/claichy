@@ -14,6 +14,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { Playlist, ViewType } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -237,16 +238,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Share app with friends button */}
-        {onOpenShareModal && (
-          <button
-            onClick={onOpenShareModal}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-transparent hover:from-amber-500/20 hover:via-yellow-500/20 text-amber-300 hover:text-amber-200 text-xs font-semibold border border-amber-500/20 transition-all group shrink-0"
-          >
-            <Share2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform text-amber-400" />
-            <span>Compartir con amigos</span>
-          </button>
-        )}
+        {/* Install App & Share buttons */}
+        <div className="mt-2 space-y-2 shrink-0">
+          <PWAInstallButton variant="sidebar" />
+          {onOpenShareModal && (
+            <button
+              onClick={onOpenShareModal}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-transparent hover:from-amber-500/20 hover:via-yellow-500/20 text-amber-300 hover:text-amber-200 text-xs font-semibold border border-amber-500/20 transition-all group"
+            >
+              <Share2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform text-amber-400" />
+              <span>Compartir con amigos</span>
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

@@ -12,6 +12,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { ViewType } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface TopNavProps {
   currentView: ViewType;
@@ -102,6 +103,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        {/* In-App PWA Install Button */}
+        <PWAInstallButton variant="topbar" />
+
         {/* Direct YouTube Link/ID button */}
         <button
           onClick={onOpenDirectYouTubeModal}

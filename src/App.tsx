@@ -542,7 +542,7 @@ export default function App() {
         description: data.description || 'Lista de reproducción personalizada',
         coverUrl:
           data.coverUrl ||
-          '/src/assets/images/playlist_top_global_1794094172053.jpg',
+          '/assets/images/playlist_top_global_1794094172053.jpg',
         color: data.color || '#10B981',
         tracks: [],
         createdAt: new Date().toISOString().split('T')[0],
@@ -659,7 +659,7 @@ export default function App() {
         title: 'Archivos Locales Offline',
         description: 'Tus canciones en MP3/WAV guardadas en la memoria local.',
         coverUrl:
-          '/src/assets/images/playlist_rock_classics_1794094172992.jpg',
+          '/assets/images/playlist_rock_classics_1794094172992.jpg',
         color: '#D97706',
         tracks: newTracks,
         createdAt: new Date().toISOString().split('T')[0],

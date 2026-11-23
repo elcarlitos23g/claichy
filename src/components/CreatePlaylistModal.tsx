@@ -10,10 +10,10 @@ interface CreatePlaylistModalProps {
 }
 
 const PRESET_COVERS = [
-  '/src/assets/images/playlist_top_global_1794094172053.jpg',
-  '/src/assets/images/playlist_urban_latino_1794094173265.jpg',
-  '/src/assets/images/playlist_lofi_chill_1794094174055.jpg',
-  '/src/assets/images/playlist_rock_classics_1794094172992.jpg',
+  '/assets/images/playlist_top_global_1794094172053.jpg',
+  '/assets/images/playlist_urban_latino_1794094173265.jpg',
+  '/assets/images/playlist_lofi_chill_1794094174055.jpg',
+  '/assets/images/playlist_rock_classics_1794094172992.jpg',
   'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80',
 ];
