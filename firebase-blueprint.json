@@ -1,0 +1,254 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Perfil privado de usuario autenticado con Google para sincronizar listas y favoritos en la nube.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "photoURL", "createdAt", "updatedAt"]
+    },
+    "UserPlaylist": {
+      "title": "UserPlaylist",
+      "description": "Lista de reproducción personalizada perteneciente al usuario.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "coverUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "isOfflineAvailable": {
+          "type": "boolean"
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "description",
+        "coverUrl",
+        "color",
+        "isOfflineAvailable",
+        "author",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PlaylistTrack": {
+      "title": "PlaylistTrack",
+      "description": "Canción guardada dentro de una lista de reproducción personalizada del usuario.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "playlistId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "artist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "album": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "duration": {
+          "type": "number"
+        },
+        "youtubeId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "coverUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "genre": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "addedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "playlistId",
+        "ownerId",
+        "title",
+        "artist",
+        "album",
+        "duration",
+        "youtubeId",
+        "coverUrl",
+        "genre",
+        "addedAt",
+        "createdAt"
+      ]
+    },
+    "LikedSong": {
+      "title": "LikedSong",
+      "description": "Canción marcada como favorita en Tus Me Gusta.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "artist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "album": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "duration": {
+          "type": "number"
+        },
+        "youtubeId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "coverUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "genre": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "artist",
+        "album",
+        "duration",
+        "youtubeId",
+        "coverUrl",
+        "genre",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Perfil privado del usuario autenticado."
+    },
+    "/users/{userId}/playlists/{playlistId}": {
+      "schema": { "$ref": "#/entities/UserPlaylist" },
+      "description": "Listas de reproducción personalizadas sincronizadas en la nube."
+    },
+    "/users/{userId}/playlists/{playlistId}/tracks/{trackId}": {
+      "schema": { "$ref": "#/entities/PlaylistTrack" },
+      "description": "Canciones de cada lista de reproducción personalizada."
+    },
+    "/users/{userId}/likedSongs/{likedId}": {
+      "schema": { "$ref": "#/entities/LikedSong" },
+      "description": "Favoritos guardados (Tus Me Gusta) sincronizados en la nube."
+    }
+  }
+}

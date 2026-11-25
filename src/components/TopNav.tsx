@@ -7,10 +7,11 @@ import {
   WifiOff,
   Youtube,
   HardDrive,
-  User,
-  Radio,
+  LogIn,
   Share2,
+  Cloud,
 } from 'lucide-react';
+import { User as FirebaseUser } from 'firebase/auth';
 import { ViewType } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -29,6 +30,8 @@ interface TopNavProps {
   onOpenDirectYouTubeModal: () => void;
   cachedCount: number;
   onOpenShareModal?: () => void;
+  user: FirebaseUser | null;
+  onOpenAuthModal: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -46,6 +49,8 @@ export const TopNav: React.FC<TopNavProps> = ({
   onOpenDirectYouTubeModal,
   cachedCount,
   onOpenShareModal,
+  user,
+  onOpenAuthModal,
 }) => {
   return (
     <header className="h-14 md:h-16 bg-[#090b10]/90 backdrop-blur-xl sticky top-0 z-30 px-3 sm:px-6 xl:px-8 flex items-center justify-between gap-2.5 sm:gap-4 border-b border-white/[0.06]">
@@ -161,14 +166,40 @@ export const TopNav: React.FC<TopNavProps> = ({
           <span>{cachedCount}</span>
         </button>
 
-        {/* Profile Avatar */}
-        <div
-          onClick={onOpenOfflineManager}
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-500/20 to-yellow-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 cursor-pointer hover:scale-105 transition-all shadow-sm"
-          title="Bóveda offline y configuración"
-        >
-          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </div>
+        {/* Account / Google Sign-In Button */}
+        {user ? (
+          <button
+            onClick={onOpenAuthModal}
+            className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-emerald-500/30 transition-all cursor-pointer shrink-0"
+            title={`Conectado como ${user.displayName || user.email} · Listas guardadas en la nube`}
+          >
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || 'Perfil'}
+                className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-lg object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center">
+                {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="hidden lg:inline text-xs font-semibold text-white max-w-[96px] truncate">
+              {user.displayName?.split(' ')[0] || 'Cuenta'}
+            </span>
+            <Cloud className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          </button>
+        ) : (
+          <button
+            onClick={onOpenAuthModal}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-amber-400/50 text-white transition-all cursor-pointer shrink-0"
+            title="Iniciar sesión con Google para guardar tus listas en la nube"
+          >
+            <LogIn className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Iniciar sesión</span>
+          </button>
+        )}
       </div>
     </header>
   );

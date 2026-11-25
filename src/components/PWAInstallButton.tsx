@@ -135,22 +135,22 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 't
                 )}
 
                 {/* Native Setup Install Section */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                    <span>1. Instalar Setup como App (Acceso Directo)</span>
+                    <span>Instalar App en tu Escritorio o Celular</span>
                   </p>
 
                   {isInstallable ? (
                     <button
                       onClick={() => install()}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs hover:brightness-105 transition-all shadow-md cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs hover:brightness-105 transition-all shadow-md cursor-pointer"
                     >
                       <Download className="w-4 h-4 stroke-[2.5]" />
-                      <span>Iniciar Setup de Instalación Ahora</span>
+                      <span>Instalar Claichy Ahora</span>
                     </button>
                   ) : isIOS ? (
-                    <div className="space-y-2 bg-white/[0.04] p-3 rounded-xl border border-white/[0.07]">
+                    <div className="space-y-2 bg-white/[0.04] p-3.5 rounded-xl border border-white/[0.07]">
                       <p className="flex items-center gap-2">
                         <Share className="w-4 h-4 text-amber-400 shrink-0" />
                         <span>
@@ -165,24 +165,28 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 't
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-2 bg-white/[0.04] p-3 rounded-xl border border-white/[0.07]">
+                    <div className="space-y-2.5 bg-white/[0.04] p-3.5 rounded-xl border border-white/[0.07]">
                       {isInsideIframe && (
                         <a
                           href={currentPublicUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-bold text-[11px] transition-all mb-1"
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs hover:brightness-105 transition-all shadow-md"
                         >
-                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                          <span>Abrir en pestaña normal para lanzar Setup</span>
+                          <ExternalLink className="w-4 h-4 stroke-[2.5] shrink-0" />
+                          <span>Abrir App en Pestaña Normal para Instalar</span>
                         </a>
                       )}
                       <p className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                         <span>
-                          <strong>En PC (Chrome / Edge / Opera):</strong> Haz clic en el icono de{' '}
-                          <strong>Instalar</strong> arriba a la derecha en la barra de dirección (o en{' '}
-                          <strong>Menú ⋮ ➔ Instalar Claichy</strong>) para instalar el Setup directo en tu escritorio.
+                          <strong>En Chrome o Edge (PC):</strong> Abre la app en pestaña normal y haz clic en el botón de <strong>Instalar</strong> arriba a la derecha de la barra de dirección (o en el menú <strong>⋮ ➔ Instalar Claichy</strong>).
+                        </span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>En Opera (PC):</strong> Haz clic en el icono de instalar que aparece en la barra de direcciones arriba a la derecha, o en el menú de Opera ➔ <strong>Página ➔ Instalar</strong>.
                         </span>
                       </p>
                       <p className="flex items-start gap-2">
@@ -196,37 +200,12 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 't
                   )}
                 </div>
 
-                {/* Direct File Downloads */}
+                {/* Secondary: GitHub Source ZIP for Owner Deployment */}
                 <div className="pt-2 border-t border-white/10 space-y-2">
-                  <p className="text-[11px] font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
                     <Laptop className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>2. Descargar Archivos (Funciona sin internet)</span>
+                    <span>Para actualizar tu web en GitHub / Render:</span>
                   </p>
-
-                  <button
-                    type="button"
-                    disabled={downloadingKey !== null}
-                    onClick={() =>
-                      handleDownload(
-                        'portable',
-                        '/api/download-portable',
-                        '/Claichy-Portable.html',
-                        'Claichy-Abrir-Aqui.html'
-                      )
-                    }
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs hover:brightness-105 transition-all shadow-md text-center cursor-pointer disabled:opacity-60"
-                  >
-                    {downloadingKey === 'portable' ? (
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                    ) : (
-                      <Download className="w-4 h-4 stroke-[2.5] shrink-0" />
-                    )}
-                    <span>
-                      {downloadingKey === 'portable'
-                        ? 'Descargando App Portable...'
-                        : 'Descargar App Portable (1 Archivo HTML)'}
-                    </span>
-                  </button>
 
                   <button
                     type="button"

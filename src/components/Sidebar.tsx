@@ -12,7 +12,10 @@ import {
   WifiOff,
   Layers,
   Share2,
+  Cloud,
+  LogIn,
 } from 'lucide-react';
+import { User as FirebaseUser } from 'firebase/auth';
 import { Playlist, ViewType } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -28,6 +31,8 @@ interface SidebarProps {
   onOpenOfflineManager: () => void;
   onOpenUploadLocal: () => void;
   onOpenShareModal?: () => void;
+  user: FirebaseUser | null;
+  onOpenAuthModal: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenOfflineManager,
   onOpenUploadLocal,
   onOpenShareModal,
+  user,
+  onOpenAuthModal,
 }) => {
   return (
     <aside className="hidden md:flex w-68 xl:w-72 2xl:w-80 bg-[#090b10] flex-col h-full select-none shrink-0 border-r border-white/[0.06] p-3 xl:p-4 gap-3 text-sm relative z-20">
@@ -238,8 +245,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Install App & Share buttons */}
+        {/* Account Cloud Sync, Install App & Share buttons */}
         <div className="mt-2 space-y-2 shrink-0">
+          <button
+            onClick={onOpenAuthModal}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left cursor-pointer ${
+              user
+                ? 'bg-emerald-500/10 hover:bg-emerald-500/15 border-emerald-500/30 text-emerald-200'
+                : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-slate-200'
+            }`}
+            title={
+              user
+                ? 'Tu música está respaldada en tu cuenta de Google'
+                : 'Inicia sesión para no perder tus listas si cambias de PC'
+            }
+          >
+            {user ? (
+              user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'Cuenta'}
+                  className="w-7 h-7 rounded-lg object-cover shrink-0 border border-emerald-400/40"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                  {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )
+            ) : (
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                <LogIn className="w-3.5 h-3.5" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold truncate">
+                {user ? user.displayName || 'Cuenta conectada' : 'Iniciar sesión'}
+              </p>
+              <p className="text-[10px] truncate flex items-center gap-1 opacity-80">
+                <Cloud className="w-2.5 h-2.5 shrink-0" />
+                <span>{user ? 'Nube activa · Respaldado' : 'Guardar listas en la nube'}</span>
+              </p>
+            </div>
+          </button>
+
           <PWAInstallButton variant="sidebar" />
           {onOpenShareModal && (
             <button

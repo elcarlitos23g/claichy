@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import {
   CATALOG_SONGS,
   INITIAL_CURATED_PLAYLISTS,
@@ -8,6 +9,18 @@ import { Artist, Playlist, PlayerState, Song, ViewType } from './types';
 import { youtubeManager } from './services/youtube';
 import { offlineAudioEngine } from './services/synthAudio';
 import { offlineStorage } from './services/offlineStorage';
+import { auth, signInWithGoogle, logoutFromFirebase } from './firebase';
+import {
+  addTrackToCloudPlaylist,
+  clearLikedSongsInCloud,
+  deletePlaylistFromCloud,
+  mergeLocalToCloud,
+  removeLikedSongFromCloud,
+  removeTrackFromCloudPlaylist,
+  saveLikedSongToCloud,
+  savePlaylistToCloud,
+  subscribeUserCloudData,
+} from './services/cloudSync';
 
 // Components
 import { Sidebar } from './components/Sidebar';
@@ -21,6 +34,7 @@ import { AddToPlaylistModal } from './components/AddToPlaylistModal';
 import { DirectYouTubeModal } from './components/DirectYouTubeModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { ShareModal } from './components/ShareModal';
+import { AuthModal } from './components/AuthModal';
 import { BottomNav } from './components/BottomNav';
 
 // Views
@@ -48,6 +62,11 @@ export default function App() {
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Auth & Cloud Sync
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const unsubCloudRef = useRef<(() => void) | null>(null);
+
   // Modals state
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
@@ -56,6 +75,7 @@ export default function App() {
   const [isDirectYouTubeOpen, setIsDirectYouTubeOpen] = useState(false);
   const [isOfflineManagerOpen, setIsOfflineManagerOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Playback state
   const [playerState, setPlayerState] = useState<PlayerState>({
@@ -168,6 +188,94 @@ export default function App() {
       window.removeEventListener('offline', handleOffline);
     };
   }, [refreshStorageStats, showToast]);
+
+  // Listen to Firebase Auth state and sync user's playlists & likes with Firestore
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+      return;
+    }
+
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      if (unsubCloudRef.current) {
+        unsubCloudRef.current();
+        unsubCloudRef.current = null;
+      }
+
+      setCurrentUser(user);
+
+      if (!user) {
+        setIsCloudSyncing(false);
+        return;
+      }
+
+      setIsCloudSyncing(true);
+      try {
+        const lastCloudUid = localStorage.getItem('claichy_cloud_uid');
+        const shouldMergeLocal = !lastCloudUid || lastCloudUid === user.uid;
+
+        if (shouldMergeLocal) {
+          const localPlaylists = await offlineStorage.getCustomPlaylists();
+          const localLikedIds = offlineStorage.getLikedSongIds();
+          const savedLikedObjs = offlineStorage.getLikedSongObjects();
+          const likedMap = new Map<string, Song>();
+          CATALOG_SONGS.forEach((s) => likedMap.set(s.id, s));
+          localPlaylists.forEach((pl) => pl.tracks.forEach((s) => likedMap.set(s.id, s)));
+          savedLikedObjs.forEach((s) => likedMap.set(s.id, s));
+
+          const localLikedSongs = localLikedIds
+            .map((id) => likedMap.get(id))
+            .filter((s): s is Song => Boolean(s));
+
+          await mergeLocalToCloud(user, localPlaylists, localLikedSongs);
+        }
+
+        localStorage.setItem('claichy_cloud_uid', user.uid);
+
+        const unsubCloud = subscribeUserCloudData(
+          user.uid,
+          (cloudPlaylists) => {
+            setCustomPlaylists(cloudPlaylists);
+            offlineStorage.replaceLocalPlaylists(cloudPlaylists);
+            setIsCloudSyncing(false);
+          },
+          (cloudLikedSongs) => {
+            offlineStorage.replaceLocalLikedSongs(cloudLikedSongs);
+            setLikedSongIds(cloudLikedSongs.map((s) => s.id));
+            setIsCloudSyncing(false);
+          }
+        );
+
+        unsubCloudRef.current = unsubCloud;
+      } catch (err) {
+        console.error('Error syncing cloud library:', err);
+        setIsCloudSyncing(false);
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      if (unsubCloudRef.current) {
+        unsubCloudRef.current();
+        unsubCloudRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSignInGoogle = useCallback(async () => {
+    const user = await signInWithGoogle();
+    showToast(`¡Bienvenido, ${user.displayName || user.email}! Sincronizando listas...`);
+  }, [showToast]);
+
+  const handleSignOut = useCallback(async () => {
+    await logoutFromFirebase();
+    localStorage.removeItem('claichy_cloud_uid');
+    await offlineStorage.replaceLocalPlaylists([]);
+    offlineStorage.clearLikedSongs();
+    setCustomPlaylists([]);
+    setLikedSongIds([]);
+    setSelectedPlaylist(null);
+    showToast('Sesión cerrada correctamente');
+  }, [showToast]);
 
   // Initialize YouTube IFrame Player
   useEffect(() => {
@@ -453,9 +561,22 @@ export default function App() {
       const isNowLiked = offlineStorage.toggleLikeSong(songId, fallbackObj);
       const updatedLikes = offlineStorage.getLikedSongIds();
       setLikedSongIds(updatedLikes);
+
+      if (currentUser) {
+        if (isNowLiked && fallbackObj) {
+          saveLikedSongToCloud(currentUser.uid, fallbackObj).catch((err) =>
+            console.error('Cloud like error:', err)
+          );
+        } else if (!isNowLiked) {
+          removeLikedSongFromCloud(currentUser.uid, songId).catch((err) =>
+            console.error('Cloud unlike error:', err)
+          );
+        }
+      }
+
       showToast(isNowLiked ? 'Guardada en Tus Me Gusta' : 'Eliminada de Tus Me Gusta');
     },
-    [allKnownSongs, playerState.currentTrack, showToast]
+    [allKnownSongs, currentUser, playerState.currentTrack, showToast]
   );
 
   const isLiked = useCallback(
@@ -534,6 +655,9 @@ export default function App() {
       if (selectedPlaylist?.id === updated.id) {
         setSelectedPlaylist(updated);
       }
+      if (currentUser) {
+        await savePlaylistToCloud(currentUser.uid, updated, false);
+      }
       showToast('Lista actualizada');
     } else {
       const newPlaylist: Playlist = {
@@ -548,12 +672,15 @@ export default function App() {
         createdAt: new Date().toISOString().split('T')[0],
         isOfflineAvailable: data.isOfflineAvailable || false,
         isCustom: true,
-        author: 'Tú',
+        author: currentUser?.displayName || 'Tú',
       };
       await offlineStorage.savePlaylist(newPlaylist);
       setCustomPlaylists((prev) => [...prev, newPlaylist]);
       setSelectedPlaylist(newPlaylist);
       navigateTo('playlist', { id: newPlaylist.id });
+      if (currentUser) {
+        await savePlaylistToCloud(currentUser.uid, newPlaylist, true);
+      }
       showToast('¡Lista de reproducción creada!');
     }
     setEditingPlaylist(null);
@@ -562,6 +689,9 @@ export default function App() {
   const handleDeletePlaylist = async (playlistId: string) => {
     await offlineStorage.deletePlaylist(playlistId);
     setCustomPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
+    if (currentUser) {
+      await deletePlaylistFromCloud(currentUser.uid, playlistId);
+    }
     navigateTo('library');
     showToast('Lista eliminada');
   };
@@ -576,6 +706,9 @@ export default function App() {
     if (target.isCustom) {
       await offlineStorage.savePlaylist(updated);
       setCustomPlaylists((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      if (currentUser) {
+        await savePlaylistToCloud(currentUser.uid, updated, false);
+      }
     }
 
     if (selectedPlaylist?.id === playlistId) {
@@ -601,12 +734,13 @@ export default function App() {
 
     const exists = pl.tracks.some((t) => t.id === song.id);
     let updatedTracks: Song[];
+    let trackWithDate: Song = song;
 
     if (exists) {
       updatedTracks = pl.tracks.filter((t) => t.id !== song.id);
       showToast(`"${song.title}" eliminada de ${pl.title}`);
     } else {
-      const trackWithDate: Song = {
+      trackWithDate = {
         ...song,
         addedAt: new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
       };
@@ -620,19 +754,35 @@ export default function App() {
     if (selectedPlaylist?.id === pl.id) {
       setSelectedPlaylist(updatedPlaylist);
     }
+
+    if (currentUser) {
+      if (exists) {
+        await removeTrackFromCloudPlaylist(currentUser.uid, pl.id, song.id);
+      } else {
+        await addTrackToCloudPlaylist(currentUser.uid, pl.id, trackWithDate);
+      }
+    }
   };
 
   const handleClearLikedSongs = useCallback(() => {
     offlineStorage.clearLikedSongs();
     setLikedSongIds([]);
+    if (currentUser) {
+      clearLikedSongsInCloud(currentUser.uid).catch((err) =>
+        console.error('Cloud clear likes error:', err)
+      );
+    }
     showToast('Tus Me Gusta se han vaciado');
-  }, [showToast]);
+  }, [currentUser, showToast]);
 
   const handleRemoveTrackFromPlaylist = async (playlistId: string, songId: string) => {
     if (playlistId === 'liked-songs') {
       offlineStorage.removeLikedSong(songId);
       const updatedLikes = offlineStorage.getLikedSongIds();
       setLikedSongIds(updatedLikes);
+      if (currentUser) {
+        await removeLikedSongFromCloud(currentUser.uid, songId);
+      }
       showToast('Canción eliminada de Tus Me Gusta');
       return;
     }
@@ -646,6 +796,9 @@ export default function App() {
     if (selectedPlaylist?.id === pl.id) {
       setSelectedPlaylist(updated);
     }
+    if (currentUser) {
+      await removeTrackFromCloudPlaylist(currentUser.uid, pl.id, songId);
+    }
     showToast('Canción eliminada de la lista');
   };
 
@@ -653,6 +806,7 @@ export default function App() {
   const handleImportLocalTracks = async (newTracks: Song[]) => {
     // Add to a dedicated "Audios Locales" playlist or create it
     let localPlaylist = customPlaylists.find((p) => p.id === 'pl-local-audios');
+    const isNewLocal = !localPlaylist;
     if (!localPlaylist) {
       localPlaylist = {
         id: 'pl-local-audios',
@@ -665,7 +819,7 @@ export default function App() {
         createdAt: new Date().toISOString().split('T')[0],
         isOfflineAvailable: true,
         isCustom: true,
-        author: 'Tú',
+        author: currentUser?.displayName || 'Tú',
       };
     } else {
       localPlaylist = {
@@ -681,6 +835,12 @@ export default function App() {
         ? prev.map((p) => (p.id === localPlaylist!.id ? localPlaylist! : p))
         : [...prev, localPlaylist!];
     });
+    if (currentUser) {
+      await savePlaylistToCloud(currentUser.uid, localPlaylist, isNewLocal);
+      for (const track of newTracks) {
+        await addTrackToCloudPlaylist(currentUser.uid, localPlaylist.id, track);
+      }
+    }
     setSelectedPlaylist(localPlaylist);
     navigateTo('playlist', { id: localPlaylist.id });
   };
@@ -742,6 +902,8 @@ export default function App() {
         onOpenOfflineManager={() => setIsOfflineManagerOpen(true)}
         onOpenUploadLocal={() => setIsOfflineManagerOpen(true)}
         onOpenShareModal={() => setIsShareModalOpen(true)}
+        user={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -765,6 +927,8 @@ export default function App() {
           onOpenDirectYouTubeModal={() => setIsDirectYouTubeOpen(true)}
           cachedCount={cachedStats.trackCount}
           onOpenShareModal={() => setIsShareModalOpen(true)}
+          user={currentUser}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
         />
 
         {/* View Switcher Container */}
@@ -1044,6 +1208,18 @@ export default function App() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         onShowToast={showToast}
+      />
+
+      {/* Google Sign-In & Cloud Backup Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        user={currentUser}
+        isSyncing={isCloudSyncing}
+        playlistsCount={customPlaylists.length}
+        likedCount={likedSongIds.length}
+        onSignInGoogle={handleSignInGoogle}
+        onSignOut={handleSignOut}
       />
     </div>
   );

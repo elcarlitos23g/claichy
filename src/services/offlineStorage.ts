@@ -171,6 +171,29 @@ class OfflineStorage {
     localStorage.setItem(STORAGE_LIKED_METADATA_KEY, JSON.stringify([]));
   }
 
+  public replaceLocalLikedSongs(songs: Song[]): void {
+    const ids = Array.from(new Set(songs.map((s) => s.id).filter(Boolean)));
+    localStorage.setItem(STORAGE_LIKES_KEY, JSON.stringify(ids));
+    localStorage.setItem(STORAGE_LIKED_METADATA_KEY, JSON.stringify(songs));
+  }
+
+  public async replaceLocalPlaylists(playlists: Playlist[]): Promise<void> {
+    try {
+      const db = await this.initDB();
+      await new Promise<void>((resolve) => {
+        const tx = db.transaction(STORE_PLAYLISTS, 'readwrite');
+        const store = tx.objectStore(STORE_PLAYLISTS);
+        store.clear();
+        playlists.forEach((pl) => store.put(pl));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    } catch (e) {
+      console.warn('DB replace playlists fallback:', e);
+    }
+    localStorage.setItem('spotiy_custom_playlists', JSON.stringify(playlists));
+  }
+
   // Audio Blob Storage (for user-imported MP3/WAV files)
   public async saveAudioBlob(blobId: string, blob: Blob): Promise<void> {
     const db = await this.initDB();
