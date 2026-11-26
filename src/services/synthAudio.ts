@@ -7,6 +7,7 @@ class OfflineAudioEngine {
   private localAudioElement: HTMLAudioElement | null = null;
   private analyser: AnalyserNode | null = null;
   private synthInterval: any = null;
+  private synthTimerInterval: any = null;
   private isSynthPlaying = false;
   private currentVolume = 0.8;
   private onTimeUpdateCallback?: (currentTime: number, duration: number) => void;
@@ -112,9 +113,15 @@ class OfflineAudioEngine {
     let step = 0;
 
     // Time ticker
-    const timerInterval = setInterval(() => {
+    if (this.synthTimerInterval) {
+      clearInterval(this.synthTimerInterval);
+    }
+    this.synthTimerInterval = setInterval(() => {
       if (!this.isSynthPlaying) {
-        clearInterval(timerInterval);
+        if (this.synthTimerInterval) {
+          clearInterval(this.synthTimerInterval);
+          this.synthTimerInterval = null;
+        }
         return;
       }
       this.synthCurrentTime += 0.5;
@@ -180,7 +187,14 @@ class OfflineAudioEngine {
       this.localAudioElement.pause();
     }
     this.isSynthPlaying = false;
-    if (this.synthInterval) clearInterval(this.synthInterval);
+    if (this.synthInterval) {
+      clearInterval(this.synthInterval);
+      this.synthInterval = null;
+    }
+    if (this.synthTimerInterval) {
+      clearInterval(this.synthTimerInterval);
+      this.synthTimerInterval = null;
+    }
   }
 
   public resume() {
@@ -206,6 +220,10 @@ class OfflineAudioEngine {
     if (this.synthInterval) {
       clearInterval(this.synthInterval);
       this.synthInterval = null;
+    }
+    if (this.synthTimerInterval) {
+      clearInterval(this.synthTimerInterval);
+      this.synthTimerInterval = null;
     }
   }
 

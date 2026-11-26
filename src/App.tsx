@@ -97,6 +97,16 @@ export default function App() {
     audioSource: 'youtube',
   });
 
+  // Always-fresh refs for callbacks registered inside mount-only player init effect
+  const handleTrackEndedRef = useRef<() => void>(() => {});
+  const currentTrackRef = useRef<Song | null>(null);
+  const volumeRef = useRef<number>(80);
+
+  useEffect(() => {
+    currentTrackRef.current = playerState.currentTrack;
+    volumeRef.current = playerState.volume;
+  }, [playerState.currentTrack, playerState.volume]);
+
   // All known songs combined (catalog + custom playlist tracks + liked songs metadata)
   const allKnownSongs = useMemo(() => {
     const map = new Map<string, Song>();
@@ -281,7 +291,7 @@ export default function App() {
   useEffect(() => {
     youtubeManager.init('youtube-player-host', {
       onReady: () => {
-        youtubeManager.setVolume(playerState.volume);
+        youtubeManager.setVolume(volumeRef.current);
       },
       onStateChange: (state: number) => {
         // YT.PlayerState: UNSTARTED = -1, ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3, CUED = 5
@@ -295,7 +305,7 @@ export default function App() {
           // Video is cued and ready, command play immediately
           youtubeManager.play();
         } else if (state === 0) {
-          handleTrackEnded();
+          handleTrackEndedRef.current();
         }
       },
       onTimeUpdate: (currentTime, duration) => {
@@ -316,8 +326,8 @@ export default function App() {
           audioSource: 'synth_offline',
         }));
         showToast('Aviso: Restricción de inserción de YouTube. Reproduciendo respaldo de audio.');
-        if (playerState.currentTrack) {
-          offlineAudioEngine.playOfflineSynth(playerState.currentTrack);
+        if (currentTrackRef.current) {
+          offlineAudioEngine.playOfflineSynth(currentTrackRef.current);
         }
       },
     });
@@ -328,7 +338,7 @@ export default function App() {
         setPlayerState((prev) => ({ ...prev, currentTime, duration }));
       },
       () => {
-        handleTrackEnded();
+        handleTrackEndedRef.current();
       }
     );
 
@@ -346,7 +356,10 @@ export default function App() {
   // Play a song
   const handlePlaySong = useCallback(
     async (song: Song, contextPlaylist?: Song[]) => {
-      const queueList = contextPlaylist && contextPlaylist.length > 0 ? contextPlaylist : [song];
+      const hasMultiple = contextPlaylist && contextPlaylist.length > 1;
+      const queueList = hasMultiple
+        ? contextPlaylist
+        : [song, ...allKnownSongs.filter((s) => s.id !== song.id)];
       const index = queueList.findIndex((s) => s.id === song.id);
 
       setPlayerState((prev) => ({
@@ -411,21 +424,35 @@ export default function App() {
         }, 3800);
       }
     },
-    [isOfflineMode, showToast]
+    [allKnownSongs, isOfflineMode, showToast]
   );
 
   // Next / Previous song
   const handleNext = useCallback(() => {
-    if (playerState.queue.length === 0) return;
+    if (playerState.queue.length === 0) {
+      if (allKnownSongs.length > 0) {
+        handlePlaySong(allKnownSongs[0], allKnownSongs);
+      }
+      return;
+    }
 
     let nextIndex = playerState.queueIndex + 1;
-    if (playerState.isShuffle) {
-      nextIndex = Math.floor(Math.random() * playerState.queue.length);
+    if (playerState.isShuffle && playerState.queue.length > 1) {
+      do {
+        nextIndex = Math.floor(Math.random() * playerState.queue.length);
+      } while (nextIndex === playerState.queueIndex);
     } else if (nextIndex >= playerState.queue.length) {
       if (playerState.repeatMode === 'all') {
         nextIndex = 0;
       } else {
-        return; // reached end of queue
+        const queueIds = new Set(playerState.queue.map((s) => s.id));
+        const extraSongs = allKnownSongs.filter((s) => !queueIds.has(s.id));
+        if (extraSongs.length > 0) {
+          const nextQueue = [...playerState.queue, ...extraSongs];
+          handlePlaySong(extraSongs[0], nextQueue);
+          return;
+        }
+        nextIndex = 0;
       }
     }
 
@@ -433,7 +460,7 @@ export default function App() {
     if (nextTrack) {
       handlePlaySong(nextTrack, playerState.queue);
     }
-  }, [handlePlaySong, playerState]);
+  }, [allKnownSongs, handlePlaySong, playerState]);
 
   const handlePrevious = useCallback(() => {
     if (playerState.currentTime > 3) {
@@ -462,13 +489,21 @@ export default function App() {
       if (playerState.audioSource === 'youtube') {
         youtubeManager.seekTo(0);
         youtubeManager.play();
-      } else {
+      } else if (playerState.audioSource === 'local_file') {
         offlineAudioEngine.seekTo(0);
+        offlineAudioEngine.resume();
+      } else {
+        offlineAudioEngine.playOfflineSynth(playerState.currentTrack);
       }
+      setPlayerState((prev) => ({ ...prev, currentTime: 0, isPlaying: true }));
     } else {
       handleNext();
     }
   }, [handleNext, playerState.audioSource, playerState.currentTrack, playerState.repeatMode]);
+
+  useEffect(() => {
+    handleTrackEndedRef.current = handleTrackEnded;
+  }, [handleTrackEnded]);
 
   // Play / Pause toggle
   const handlePlayPause = useCallback(() => {
